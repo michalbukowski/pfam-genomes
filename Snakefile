@@ -81,8 +81,8 @@ rule hmmfetch:
 
 rule hmmsearch:
     params:
-        E       = 0.001,
-        domE    = 0.001,
+        E       = 0.01,
+        domE    = 0.01,
         incE    = 0.001,
         incdomE = 0.001
     threads:
