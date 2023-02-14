@@ -1,0 +1,16 @@
+group	ipr_acc	pfm_acc	pfm_name
+CAT	IPR000834	PF00246.27	Peptidase M14
+CAT	IPR000755	PF01427.20	Peptidase M15
+CAT	IPR016047	PF01551.25	Peptidase M23
+CAT	IPR005073	PF03411.16	Peptidase M74
+CAT	IPR001967	PF00768.23	Peptidase S11
+CAT	IPR000667	PF02113.18	Peptidase S13
+CAT	IPR005490	PF03734.17	L,D-transpeptidase catalytic domain
+CAT	IPR007921	PF05257.19	CHAP domain
+CAT	IPR000064	PF00877.22	Endopeptidase, NLPC/P60 domain
+CAT	IPR040449	PF02016.18	Peptidase family S66
+CWT	IPR002477	PF01471.21	Putative peptidoglycan binding domain
+CWT	IPR021731	PF11741.11	AMIN domain
+CWT	IPR001119	PF00395.23	S-layer homology (SLH) domain profile
+CWT	IPR003646	PF08460.13	SH3-like domain, bacterial-type
+CWT	IPR018392	PF01476.23	LysM domain profile
