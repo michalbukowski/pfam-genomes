@@ -1,0 +1,6 @@
+pfam_db: /scratch/Pfam_2023-01-25/Pfam-A.hmm
+gen_dir: /scratch/staphylococci_genomes_2023-01-31/fna
+archs:
+    CAT-CWT : GRP|CAT-CWT
+    M23-SH3 : ACC|PF01551\.25-PF08460\.13
+    SH3     : ACC|.*PF08460\.13.*
