@@ -53,17 +53,17 @@ In the working directory you can find the `Snakefile` describing the pipeline an
 The pipline described in the Snakefile encompasses the following stages:
 1. **extractorfs** -- using `scripts/extractorfs`, provided DNA alphabet (`input/IUPACDNA.txt`) and translation table (`input/TABLE11.txt`), from each genome extract all posisble open reading frames (ORFs) of lenght >= 300&nbsp;nt.
 1. **uniquetrans** -- using `scripts/unique.py`, cluster quickly extracted protein sequences based on their 100% identity to prepare a non-redundant set for HMM searches.
-1. **hmmfetch** -- using `hmmfetch` tool, fetch domains, from `Pfam-A.hmm` file, that are listed in `input/domains.tsv` based on `pfam_acc` column.
+1. **hmmfetch** -- using `hmmfetch` tool, fetch domains, from `Pfam-A.hmm` file, that are listed in `input/domains.tsv` and their Pfam accession version numbers are provided in `pfam_acc` column of that file.
 1. **hmmsearch** -- using `hmmsearch` tool, search for retrived domains in the non-redundant protein sequence set.
 1. **preprocess** -- using `scripts/preprocess.py`, preprocess the raw `hmmsearch` results and save relevant columns.
 1. **archchart** -- using `scripts/archchart.py`, branch to generate charts in HTML format that describe all domain architectures found, also in regard to groups of domains (column `group` in `input/domains.tsv`).
 1. **convertchart** -- using `wkhtmltoimage` tool, continue the branch to convert charts in HTML format to PNG.
 1. **filter** -- using `scripts/filter.py`, continue the main branch and from preprocessed hits select those of independent E-value (i-Evalue) <= 0.001 and domain coverage >= 80% (0.8). Next from target protein sequences select those with domain architecure of interest (`config.yaml`).
 1. **extracttrans** -- using `scripts/extractfasta`, extract finally selected sequences from the non-redundant set.
-1. **signalp** -- using and independently installed [SignalP 5.0](https://services.healthtech.dtu.dk/services/SignalP-5.0) tool available as `signalp`, detect N-terminal signal sequences in the final set of protein sequences for each domain architecture of interest. If the tool is not available, the step generates an empty result file and is skipped.
-1. **annotdom** -- using `scripts/annot.py`, prepare a GFF3 file with annotations for the finally selected protein sequences. Annotations are prepared based on `hmmsearch` filtered results and `signalp` results as well.
+1. **signalp** -- using independently installed [SignalP 5.0](https://services.healthtech.dtu.dk/services/SignalP-5.0) tool available as `signalp`, detect N-terminal signal sequences in the final set of protein sequences for each domain architecture of interest. If the tool is not available, the step generates an empty result file and is skipped.
+1. **annotdom** -- using `scripts/annot.py`, prepare a GFF3 file with annotations for the finally selected protein sequences. Annotations are prepared based on `hmmsearch` filtered results and `signalp` results.
 
-More detailed description on how the pipeline works you will find in comments in the `Snakefile`, `config.yaml` file and the script files.
+More detailed description on how the pipeline works you will find in comments in the `Snakefile`, `config.yaml` file and the script/source files.
 
 ### 5. Running the pipeline
 Providing that you have `pfam-gen` environment properly set up and activated as well as at least the test data dowloaded, you can first look up the list of tasks to be done by running the following command from the pipeline directory, where `Snakefile` is located:
