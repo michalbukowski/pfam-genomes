@@ -1,6 +1,28 @@
-pfam_db: /scratch/Pfam_2023-01-25/Pfam-A.hmm
-gen_dir: /scratch/staphylococci_genomes_2023-01-31/fna
+# Created by Michal Bukowski (michal.bukowski@tuta.io) under GPL-3.0 license
+
+# Locations of Pfam database (Pfam-A.hmm file) and directory with genomic sequences.
+pfam_db: input/Pfam-A.hmm
+gen_dir: genomes
+
+# Dictionary describing domain architectures to search for as pairs of
+# architecture custom label : regex describing the architecure with a prefix
+# (GRP| or ACC|) that indicates whether domain group labels or Pfam accession
+# version number are used. Domains are assigned to groups in input/domain.tsv file.
+# In regex strings do not use characters that may confuse Bash (e.g. &;`'"),
+# only letters, numbers, dash and underscore symbols are advised.
+# Example architectures:
+# GRP|CAT-CWT                 : find sequences with two domain only, one from
+#                               the group CAT and one from the group GRP,
+#                               former directly preceeds the latter
+# GRP|.*CWT.*CAT.*            : similar to the previous one, but around the domains
+#                               any other may exist (.*), and the order of CAT
+#                               and CWT domains is reversed
+# ACC|PF01551\.25-PF08460\.13 : like the first example, but instead of domains
+#                               from certain groups, find exactly two domains
+#                               referenced by Pfam accession version numbers
+#                               PF01551.25 and PF08460.13
 archs:
-    CAT-CWT : GRP|CAT-CWT
-    M23-SH3 : ACC|PF01551\.25-PF08460\.13
-    SH3     : ACC|.*PF08460\.13.*
+    CAT-CWT   : GRP|CAT-CWT
+    xCWTxCATx : GRP|.*CWT.*CAT.*
+    M23-SH3   : ACC|PF01551\.25-PF08460\.13
+

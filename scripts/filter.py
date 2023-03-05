@@ -1,4 +1,18 @@
 #!/usr/bin/env python3
+# Created by Michal Bukowski (michal.bukowski@tuta.io) under GPL-3.0 license
+
+# Merges preprocessed HMMsearch results in respect to target query id,
+# that gives one row - one protein with an architecture assigned, i.e. sequence
+# of domains. Next filters the results in respect to the requested domain
+# architecture. Arguments:
+# --arch    : expected domain arrangement as regex, starts with
+#             'GRP|' or 'ACC|' depending whether arrangement describes
+#             domains by their Pfam accession versions or their group names
+# --hmmres  : preprocessed HMMsearch results
+# --output  : final TSV output file with filtered data
+#USAGE:
+# ./filter.py --arch    DOMARCH_REGEX --hmmres INPUT_HMMRES    \
+#             --output  FINAL_HMMOUT
 
 #-------------------------------------------------------------------------------
 import argparse, sys
@@ -7,75 +21,68 @@ from os import linesep as eol
 
 #-------------------------------------------------------------------------------
 def parse_args():
+    '''Parses command line arguments:
+       --arch    : expected domain arrangement as regex, starts with
+                    'GRP|' or 'ACC|' depending whether arrangement describes
+                    domains by their Pfam accession versions or their group names
+       --hmmres  : preprocessed HMMsearch results
+       --output  : final TSV output file with filtered data
+       Returns:
+       args : ArgumentParser object
+    '''
     parser = argparse.ArgumentParser()
 
-    parser.add_argument('--qcovt', type=float, required=True,
-        help='query (profile) covarage by target sequence')
-    parser.add_argument('--iEvalue', type=float, required=True,
-        help='independent E-value threshold for each domain hit')
-    parser.add_argument('--cols', type=str, required=True,
-        help='names of columns reported by hmmsearch')
-    parser.add_argument('--leave', type=str, required=True,
-        help='names of columns that are to be preserved')
     parser.add_argument('--arch', type=str, required=True,
-        help='expected domain arrangement as regex, starts with \'GRP|\' or ' +
+        help='Expected domain arrangement as regex, starts with \'GRP|\' or ' +
              '\'ACC|\' depending whether arrangement describes domains by '   +
-             'their PFAM accession numbers or their group names')
-    parser.add_argument('--domdata', type=str, required=True,
-        help='TSV file with data on searched domains')
-    parser.add_argument('--domtbl', type=str, required=True,
-        help='per domain (domtblout) hmmsearch tabular output data')
+             'their Pfam accession versions or their group names')
+    parser.add_argument('--hmmres', type=str, required=True,
+        help='Preprocessed HMMsearch results')
     parser.add_argument('--output', type=str, required=True,
         help='TSV output file with filtered data')
 
     args = parser.parse_args()
     return args
 
-def basic_filter(args, hmm_df):
-    hmm_df = pd.concat([hmm_df.loc[:, :21], hmm_df.loc[:, 22:].apply(
-        lambda row: ' '.join(row), axis=1)], axis=1)
-    hmm_df.columns = args.cols.split(' ')
-    for col in 'srcid start end asmacc'.split():
-        hmm_df[col] = hmm_df['desc'].str.extract(f'{col}=([^\ {eol}]+)')
-    hmm_df['qcovt'] = ((hmm_df['hmm_to'] - hmm_df['hmm_from']).abs() + 1) \
-                      / hmm_df['qlen']
-    hmm_df = hmm_df[
-        (hmm_df['qcovt'] >= args.qcovt) &
-        (hmm_df['i-Evalue'] <= args.iEvalue)
-    ]
-    return hmm_df
-
-def arch_filter(args, hmm_df, dom_df):
-    col = 'group' if args.arch.startswith('GRP|') else 'qacc'
-    args.arch = args.arch[4:]
-    hmm_df = hmm_df.merge(dom_df[['pfm_acc', 'group']], left_on='qacc',
-                          right_on='pfm_acc', how='left')
-    hmm_df.sort_values(['asmacc', 'tname', 'env_from'], inplace=True)
-    agg_df = hmm_df[['tname', 'group', 'qacc']].groupby('tname').agg(
-        lambda values: '-'.join(values))
-    agg_df = agg_df.loc[ agg_df[col].str.fullmatch(args.arch) ]
-    hmm_df = hmm_df[ hmm_df['tname'].isin(agg_df.index) ]
-    return hmm_df
-
 def main():
+    '''The entry point function that merges preprocessed HMMsearch results
+       in respect to target query id, that gives one row - one protein with
+       an architecture assigned, i.e. sequence of domains. Next filters
+       the results in respect to the requested domain architecture.
+    '''
+    # Parse args and make sure that architecture regex contains a proper prefix.
     args = parse_args()
     if not any(args.arch.startswith(prefix) for prefix in ['GRP|', 'ACC|']):
         raise Exception('The value of --arch must start either with \'GRP|\' ' +
                         'or \'ACC|\'')
-    try:
-        hmm_df = pd.read_csv(args.domtbl, header=None, comment='#', sep='\s+')
-    except pd.errors.EmptyDataError:
-        hmm_df = pd.DataFrame(columns=args.leave.split())
-        hmm_df.to_csv(args.output, index=False, sep='\t')
-        sys.exit()
-    dom_df = pd.read_csv(args.domdata, sep='\t')
+    # Read preprocessed HMMserch results.
+    hmm_df = pd.read_csv(args.hmmres, sep='\t')
     print(f'Found {hmm_df.shape[0]:>3} results, ', end='')
-    hmm_df = basic_filter(args, hmm_df)
-    hmm_df = arch_filter(args, hmm_df, dom_df)
+    # Use either group column or qacc (Pfam accession version) depending on
+    # input regex prefix. Remove the prefix from regex.
+    col = 'group' if args.arch.startswith('GRP|') else 'qacc'
+    args.arch = args.arch[4:]
+    # In the preprocessed data rows have been already sorted by assembly accession,
+    # target protein sequecne id/name and the star position of matched domain to
+    # avoid assigning to a protein wrong architecture (domain order).
+    # Having that done, group rows in respect to protein sequecne id/name,
+    # join values of remaining colums (domain group and Pfam accession version)
+    # with single dash. That creates for every target protein sequence a string
+    # describing its domain architecture in regard to domain groups as well as
+    # domain Pfam accession versions.
+    agg_df = hmm_df['tname group qacc'.split()].groupby('tname').agg(
+        lambda values: '-'.join(values))
+    # Filter the aggregated rows in respect to either group or qacc column
+    # (whichever is selected in command line arguments) using architecure
+    # regex. Use agg_df index to select relevant rows from the original hmm_df.
+    agg_df = agg_df.loc[ agg_df[col].str.fullmatch(args.arch) ]
+    hmm_df = hmm_df[ hmm_df['tname'].isin(agg_df.index) ]
     print(f'of which {hmm_df.shape[0]:>3} remained')
-    hmm_df = hmm_df[args.leave.split()]
+    # Save the filtered data.
     hmm_df.to_csv(args.output, index=False, sep='\t')
 
 #-------------------------------------------------------------------------------
+# Entry point.
 if __name__ == '__main__':
     main()
+

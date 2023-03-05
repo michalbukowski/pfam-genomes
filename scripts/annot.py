@@ -1,21 +1,40 @@
 #!/usr/bin/env python3
+# Created by Michal Bukowski (michal.bukowski@tuta.io) under GPL-3.0 license
+
+# Creates a GFF3 file with annotations based on final filtered HMMsearch and
+# SignalP results. Arguments:
+# --sigres  : final SignalP results for Gram+ and Gram- bacteria
+# --hmmres  : final filtered HMMsearch results
+# --seqs    : final FASTA file with relevant sequences
+# --output  : GFF3 file with annotations for relevant sequences
+# USAGE:
+# ./annot.py --sigres SIGNALP_RES --hmmres HMMSEARCH_RES \
+#            --seqs ANALYSED_SEQS --output GFF3_ANNOTS
 
 #-------------------------------------------------------------------------------
 import argparse
 import pandas as pd
 from os import linesep as eol
-from lib import fasta
+from lib.fasta import read_fasta
 
 #-------------------------------------------------------------------------------
 def parse_args():
+    '''Parses command line arguments:
+       --sigres  : final SignalP results for Gram+ and Gram- bacteria
+       --hmmres  : final filtered HMMsearch results
+       --seqs    : final FASTA file with relevant sequences
+       --output  : GFF3 file with annotations for relevant sequences
+       Returns:
+       args : ArgumentParser object
+    '''
     parser = argparse.ArgumentParser()
     
     parser.add_argument('--sigres', type=str, required=True,
-        help='final signalp results for Gram+ and Gram- bacteria')
+        help='Final SignalP results for Gram+ and Gram- bacteria')
     parser.add_argument('--hmmres', type=str, required=True,
-        help='final hmmsearch results')
+        help='Final HMMsearch results')
     parser.add_argument('--seqs', type=str, required=True,
-        help='fasta file with seqs')
+        help='FASTA file with analysed sequences')
     parser.add_argument('--output', type=str, required=True,
         help='GFF3 file with annotations')
 
@@ -23,12 +42,20 @@ def parse_args():
     return args
 
 def main():
+    '''The entry point function that creates a GFF3 file with annotations based
+       on final filtered HMMsearch and SignalP results.
+    '''
+    # Parse command line arguments, load analysed sequences from FASTA file.
     args = parse_args()
-    seqs = fasta.read_fasta(args.seqs)
+    seqs = read_fasta(args.seqs)
     
+    # Load HMMsearch results
     hmm_df = pd.read_csv(args.hmmres, sep='\t')
     hmm_df = hmm_df[ hmm_df['tname'].isin(seqs) ]
     
+    # Open SingalP results and parse them into a DataFrame. Drop duplicates in
+    # regard to analysed sequence id (ID), leve those with highest propabilities
+    # of possesing an N-terminal.
     with open(args.sigres) as f:
         f.readline()
         names = f.readline()[2:-1].split('\t')
@@ -42,6 +69,9 @@ def main():
         sig_df.drop_duplicates('ID', inplace=True)
         sig_df.set_index('ID', drop=True, inplace=True)
     
+    # Process SignalP hits that are and filtered HMM search hits to generate
+    # a GFF3 file desribing positions and kids of relevant domains in
+    # the analysed sequenes.
     fout = open(args.output, 'w')
     fout.write(f'##gff-version 3{eol}')
     for tname, sub_df in hmm_df.groupby('tname'):
@@ -63,5 +93,7 @@ def main():
     fout.close()
 
 #-------------------------------------------------------------------------------
+# Entry point.
 if __name__ == '__main__':
     main()
+
