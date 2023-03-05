@@ -51,7 +51,7 @@ In the working directory you can find the `Snakefile` describing the pipeline an
 
 ### 4. Pipeline architecture
 The pipline described in the Snakefile encompasses the following stages:
-1. **extractorfs** -- using `scripts/extractorfs`, provided DNA alphabet (`input/IUPACDNA.txt`) and translation table (`input/TABLE11.txt`), from each genome extract all posisble open reading frames (ORFs) of lenght >= 200&nbsp;nt.
+1. **extractorfs** -- using `scripts/extractorfs`, provided DNA alphabet (`input/IUPACDNA.txt`) and translation table (`input/TABLE11.txt`), from each genome extract all posisble open reading frames (ORFs) of lenght >= 300&nbsp;nt.
 1. **uniquetrans** -- using `scripts/unique.py`, cluster quickly extracted non-redundant protein sequences based on their 100% identity to prepare a non-redundant set for HMM searches.
 1. **hmmfetch** -- using `hmmfetch` tool, fetch domains, from `Pfam-A.hmm` file, that are listed in `input/domains.tsv` based on `pfam_acc` column.
 1. **hmmsearch** -- using `hmmsearch` tool, search for retrived domains in the non-redundant protein sequence set.
