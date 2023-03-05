@@ -221,8 +221,7 @@ rule archchart:
                                   > {log} 2>&1
         '''
 
-# In the 7-Bth step, continue the branch to convert charts in HTML format to
-# PDF and PNG
+# In the 7-Bth step, continue the branch to convert charts in HTML format to PNG
 rule convertchart:
     params:
        quality = 100,
@@ -282,9 +281,10 @@ rule extracttrans:
         '''
 
 # In the 8th step, continuing step 6th, use SignalP to detect N-terminal signal
-# sequences in the final set of protein sequences for a given domain architecture.
-# This step requires a separate SignalP installation and an access to it via
-# signalp command. If the command is not found, empty output file is generated.
+# sequences in the final set of protein sequences for each domain architecture
+# of interest. This step requires a separate SignalP installation and an access
+# to it via signalp command. If the command is not found, empty output file
+# is generated.
 rule signalp:
     threads:
         max_cores
