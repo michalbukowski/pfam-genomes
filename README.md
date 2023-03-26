@@ -5,7 +5,7 @@ A compact pipeline that allows for searching selected domains (based on [Pfam HM
 ### 1. Conda environment
 To set up the environment properly you need to have [Miniconda](https://docs.conda.io/en/latest/miniconda.html) installed. Then, from the pipeline directory, you need to create an environment `pfam-gen` described in `envs/pfam-gen.txt`:
 ```bash
-conda create -n pfam-gen -f envs/pfam-gen.txt
+conda create -n pfam-gen --file envs/pfam-gen.txt
 ```
 Next, activate the environment:
 ```bash
