@@ -87,7 +87,7 @@ rule extractorfs:
                                --minlen {params.minlen}      \
                                --seqs   {output.seqs}        \
                                --trans  {output.trans}       \
-                                 >      {log} 2>&1
+                                 >>     {log} 2>&1
         '''
 
 # In the 2nd step quickly cluster sequences based on their 100% identity to
@@ -104,13 +104,9 @@ rule uniquetrans:
     log:
         'log/uniquetrans.log'
     shell:
-        '''fpaths=({params.mask})
-           for fpath in "${{fpaths[@]}}"; do
-               cat "${{fpath}}"
-           done                                     \
-           |                                        \
-           scripts/unique.py --output {output.repr} \
-                               >  {log} 2>&1
+        '''scripts/unique.py --input "{params.mask}" \
+                             --output {output.repr}  \
+                               > {log} 2>&1
         '''
 
 # In the 3rd step, from Pfam-A HMM file fetch domains that are listed in
@@ -329,11 +325,7 @@ rule annotdom:
     log:
         'log/final/annotdom_{arch}.log'
     shell:
-        '''if [[ ! -s {input.sigres} ]]; then
-               touch {output}
-               exit
-           fi
-           scripts/annot.py --sigres {input.sigres} \
+        '''scripts/annot.py --sigres {input.sigres} \
                             --hmmres {input.hmmres} \
                             --seqs   {input.seqs}   \
                             --output {output}       \

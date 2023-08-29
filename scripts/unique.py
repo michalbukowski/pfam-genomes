@@ -14,6 +14,7 @@
 import argparse, sys
 from os import linesep as eol
 from os.path import sep, extsep
+from glob import glob
 from itertools import count
 from lib.fasta import fasta, fasta_meta
 
@@ -27,8 +28,8 @@ class Clust:
 #-------------------------------------------------------------------------------
 def parse_args():
     '''Parses command line arguments:
-       --input  : protein FASTA file with sequences to be clustered, if not
-                   provided, data are read from stdin
+       --input  : protein FASTA file with sequences to be clustered,
+                  wildcard * is allowed for integrating data from multiple files
        --output : protein FASTA file with representative sequences
        Returns:
        args : ArgumentParser object
@@ -36,7 +37,8 @@ def parse_args():
     parser = argparse.ArgumentParser()
     
     parser.add_argument('--input', type=str,
-        help='FASTA file with sequences for clustering')
+        help='Path to a FASTA file with sequences for clustering, ' +
+             'wildcard * is allowed for integrating data from multiple files.')
     parser.add_argument('--output', type=str, required=True,
         help='FASTA file with representative sequences')
     
@@ -65,8 +67,9 @@ def main():
     # Open input and output files, write column names to TSV files that
     # hold clustering information (cluster id and metadata of subsequent
     # sequences) and sequence counts (cluster id and sequecne count).
-    # If input file path is not provided, data are read from stdin.
-    fin    = sys.stdin if args.input is None else open(args.input)
+    # If input file path and path with wildcards are not provided,
+    # data are read from stdin.
+    fpaths = glob(args.input)
     frepr  = open(args.output, 'w')
     fclust = open(args.outbase + '_clusts.tsv', 'w')
     fcount = open(args.outbase + '_lengths.tsv', 'w')
@@ -89,26 +92,29 @@ def main():
         meta = fasta_meta(header, meta_keys)
         meta = '\t'.join( meta[key] for key in meta_keys )
         fclust.write(f'{clustid}\t{meta}{eol}')
-        
-    # Read input FASTA file line by line to extract subsequent sequences and their
+    
+    # Read input FASTA file(s) line by line to extract subsequent sequences and their
     # metadata. Use the helper function process_seq() when a sequence is completly
     # extracted and is not a key in the seqs dict (except the first letter), add
     # it to the dict with a new cluster id and write to the output FASTA file
     # as representative. For each sequence write to the TSV file to which
     # cluster it belongs.
-    header, seq = None, ''
-    for line in fin:
-        if line[0] == '>':
-            line = line[1:].rstrip(eol)
-            if header is not None and seq != '' and 'X' not in seq:
-                process_seq()
-            header = line
-            seq = ''
-        elif header is not None:
-            seq += line.rstrip(eol)
-    # Process the last seq at the end of the file.
-    if header is not None and seq != '' and 'X' not in seq:
-        process_seq()
+    for fpath in fpaths:
+        fin = open(fpath)
+        header, seq = None, ''
+        for line in fin:
+            if line[0] == '>':
+                line = line[1:].rstrip(eol)
+                if header is not None and seq != '' and 'X' not in seq:
+                    process_seq()
+                header = line
+                seq = ''
+            elif header is not None:
+                seq += line.rstrip(eol)
+        # Process the last seq at the end of the file.
+        if header is not None and seq != '' and 'X' not in seq:
+            process_seq()
+        fin.close()
     
     # Save cluster sequence counts to a TSV file.
     lines = [ None ] * len(clusts)
@@ -120,8 +126,6 @@ def main():
     fcount.close()
     fclust.close()
     frepr.close()
-    if fin is not sys.stdin:
-       fin.close()
 
 #-------------------------------------------------------------------------------
 # Entry point.
