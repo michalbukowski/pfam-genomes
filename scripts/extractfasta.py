@@ -57,7 +57,7 @@ def main():
     for asmacc, sub_df in hmm_df[['asmacc', 'tname', 'clustid']].groupby('asmacc'):
         seqs = read_fasta(f'{args.seqdir}/{asmacc}.faa', sub_df['tname'].to_numpy())
         sub_df.sort_values('tname', inplace=True)
-        for seqid in sub_df['tname'].sort_values():
+        for _, (seqid, clustid) in sub_df['tname clustid'.split()].iterrows():
             clustid = f'clustid={clustid}'
             if seqs[seqid].title != '':
                 clustid = f' {clustid}'
