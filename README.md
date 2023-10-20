@@ -3,7 +3,7 @@
 A compact pipeline that allows for searching selected domains (based on [Pfam HMM models](https://www.ebi.ac.uk/interpro/download/pfam)) in proteins encoded in genomic sequences.
 
 ### 1. Conda environment
-To set up the environment properly you need to have [Miniconda](https://docs.conda.io/en/latest/miniconda.html) installed on linux-64 platform. The pipeline was tested on Ubuntu 22.04 using conda 23.7.4. Once you ready with that, you need to create a conda environment `pfam-gen` described in `envs/pfam-gen.txt`:
+To set up the environment properly you need to have [Miniconda](https://docs.conda.io/en/latest/miniconda.html) installed on linux-64 platform. The pipeline was tested on Ubuntu 22.04 using conda 23.7.4. Once you are ready with that, you need to create a conda environment `pfam-gen` described in `envs/pfam-gen.txt`:
 ```bash
 conda create --name pfam-gen --file envs/pfam-gen.txt
 ```
