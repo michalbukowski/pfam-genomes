@@ -85,7 +85,7 @@ def main():
     hmm_df = pd.concat([hmm_df.loc[:, :21], hmm_df.loc[:, 22:].apply(
         lambda row: ' '.join(row), axis=1)], axis=1)
     hmm_df.columns = args.cols.split(' ')
-    for col in 'srcid start end asmacc'.split():
+    for col in 'srcid start end asmacc clustid'.split():
         hmm_df[col] = hmm_df['desc'].str.extract(f'{col}=([^\ {eol}]+)')
     # Calculate query domain coverage by target protein sequence (qcovt) and
     # filter against it and independent E-value.

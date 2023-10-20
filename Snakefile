@@ -173,8 +173,8 @@ rule preprocess:
         cols    = 'tname tacc tlen qname qacc qlen E-value seqscore seqbias '+ \
                   '# of c-Evalue i-Evalue domscore dombias hmm_from hmm_to ' + \
                   'ali_from ali_to env_from env_to acc desc',
-        leave   = 'tname srcid start end asmacc qname qacc qlen qcovt ' + \
-                  'group E-value c-Evalue i-Evalue hmm_from hmm_to '    + \
+        leave   = 'tname srcid start end asmacc clustid qname qacc qlen qcovt ' + \
+                  'group E-value c-Evalue i-Evalue hmm_from hmm_to '            + \
                   'env_from env_to'
     input:
         domdata = rules.hmmfetch.input,
@@ -258,7 +258,7 @@ rule filter:
         '''
 
 # In the 7th step, extract relevant sequences from ORF set for a given
-# assembly accession, the value which is retrieved from seuqnce metadata
+# assembly accession, the value which is retrieved from sequnce metadata
 # (FASTA header) preserved in filtered HMMsearch results (desc column).
 rule extracttrans:
     params:

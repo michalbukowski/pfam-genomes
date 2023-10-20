@@ -111,18 +111,20 @@ def main():
     # with single dash. That creates for every target protein sequence a string
     # describing its domain architecture in regard to domain groups as well as
     # domain Pfam accession versions.
-    # Replace signgle dashes with long dash character &#8212; for columns with
+    # Replace single dashes with long dash character &#8212; for columns with
     # HTML-formated values.
-    cols = 'tname group qacc qname group_html qname_html'.split()
-    agg_df = hmm_df[cols].groupby('tname').agg(lambda vals: '--'.join(vals))
+    cols = 'tname clustid group qacc qname group_html qname_html'.split()
+    agg_df = hmm_df[cols].groupby('clustid').agg(lambda vals: '--'.join(vals))
     for col in 'group_html', 'qname_html':
         agg_df.loc[:, col] = agg_df[col].str.replace('--', '&#8212;')
     
     # Read data on initial cluster lengths. Merge them with groupped HMMsearch
     # results on columns containing protein sequence id: clustid for clusters
     # and tname (target name) for HMMsearch results.
+    print(agg_df.columns)
     clust_df = pd.read_csv(args.clstlen, sep='\t')
-    merged_df = agg_df.merge(clust_df, how='left', left_on='tname',
+    print(clust_df.columns)
+    merged_df = agg_df.merge(clust_df, how='left', left_on='clustid',
                              right_on='clustid')
     
     # Gather into a HTML table depictions of domain architectures and numbers of

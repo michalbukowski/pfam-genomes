@@ -19,13 +19,6 @@ from itertools import count
 from lib.fasta import fasta, fasta_meta
 
 #-------------------------------------------------------------------------------
-# A helper class for cluster data storage: cluster id and cluster sequence count.
-class Clust:
-    def __init__(self, clustid, length):
-        self.clustid = clustid
-        self.length  = length
-
-#-------------------------------------------------------------------------------
 def parse_args():
     '''Parses command line arguments:
        --input  : protein FASTA file with sequences to be clustered,
@@ -57,11 +50,9 @@ def main():
        output file name to '_clusts.tsv', and for cluster item counts to
        '_lenghts.tsv'
     '''
-    # Parse command line arguments, create an open range integer generator for
-    # naming subsequent clusters and a dictionary for representative sequecnes
-    # {sequence : cluster id}
+    # Parse command line arguments and create a dictionary for representative
+    # sequecnes {cluster id : length}
     args = parse_args()
-    ngen = count()
     clusts = {}
     
     # Open input and output files, write column names to TSV files that
@@ -82,16 +73,15 @@ def main():
     # A helper function for the next block.
     def process_seq():
         seqid  = header.split(' ')[0]
-        seqkey = seq[1:]
+        seqkey = hash(seq[1:])
         if seqkey not in clusts:
-            clusts[seqkey] = Clust(seqid, 1)
-            frepr.write(fasta(header, '', seq))
+            clusts[seqkey] = 1
+            frepr.write(fasta(header, f'clustid={seqkey}', seq))
         else:
-            clusts[seqkey].length += 1
-        clustid = clusts[seqkey].clustid
+            clusts[seqkey] += 1
         meta = fasta_meta(header, meta_keys)
         meta = '\t'.join( meta[key] for key in meta_keys )
-        fclust.write(f'{clustid}\t{meta}{eol}')
+        fclust.write(f'{seqkey}\t{meta}{eol}')
     
     # Read input FASTA file(s) line by line to extract subsequent sequences and their
     # metadata. Use the helper function process_seq() when a sequence is completly
@@ -117,10 +107,8 @@ def main():
         fin.close()
     
     # Save cluster sequence counts to a TSV file.
-    lines = [ None ] * len(clusts)
-    for i, clust in enumerate(clusts.values()):
-        lines[i] = f'{clust.clustid}\t{clust.length}{eol}'
-    fcount.writelines(lines)
+    for clustid, length in clusts.items():
+        fcount.write(f'{clustid}\t{length}{eol}')
     
     # Close input and output files.
     fcount.close()
