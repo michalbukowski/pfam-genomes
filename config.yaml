@@ -17,12 +17,15 @@ gen_dir: genomes
 # GRP|.*CWT.*CAT.*            : similar to the previous one, but around the domains
 #                               any other may exist (.*), and the order of CAT
 #                               and CWT domains is reversed
-# ACC|PF01551\.25-PF08460\.13 : like the first example, but instead of domains
+# NAM|Peptidase_M14-SH3_5     : like the first example, but instead of domains
 #                               from certain groups, find exactly two domains
-#                               referenced by Pfam accession version numbers
-#                               PF01551.25 and PF08460.13
+#                               referenced by Pfam names Peptidase_M14 and SH3_5
+# ACC|PF01551\.25-PF08460\.13 : instead of domains from certain groups, find
+#                               exactly two domains referenced by Pfam accession
+#                               version numbers PF01551.25 and PF08460.13
 archs:
     CAT-CWT   : GRP|CAT-CWT
     xCWTxCATx : GRP|.*CWT.*CAT.*
-    M23-SH3   : ACC|PF01551\.25-PF08460\.13
+    M23-SH3   : NAM|Peptidase_M23-SH3_5
+    M23-SLH   : NAM|Peptidase_M23-SLH
 

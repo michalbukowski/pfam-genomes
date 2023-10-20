@@ -113,7 +113,7 @@ rule uniquetrans:
 # input/domains.tsv. Here only pfam_acc column is used.
 rule hmmfetch:
     params:
-        col = 'pfm_acc'
+        col = 'pfm_name'
     input:
         'input/domains.tsv'
     output:

@@ -33,9 +33,10 @@ def parse_args():
     parser = argparse.ArgumentParser()
 
     parser.add_argument('--arch', type=str, required=True,
-        help='Expected domain arrangement as regex, starts with \'GRP|\' or ' +
-             '\'ACC|\' depending whether arrangement describes domains by '   +
-             'their Pfam accession versions or their group names')
+        help='Expected domain arrangement as regex, starts with \'GRP|\', ' +
+             '\'NAM|\' or \'ACC\' depending whether arrangement describes ' +
+             'domains by their Pfam accession versions, Pfam domain names or' +
+             'their group names')
     parser.add_argument('--hmmres', type=str, required=True,
         help='Preprocessed HMMsearch results')
     parser.add_argument('--output', type=str, required=True,
@@ -52,15 +53,20 @@ def main():
     '''
     # Parse args and make sure that architecture regex contains a proper prefix.
     args = parse_args()
-    if not any(args.arch.startswith(prefix) for prefix in ['GRP|', 'ACC|']):
-        raise Exception('The value of --arch must start either with \'GRP|\' ' +
-                        'or \'ACC|\'')
+    if not any(args.arch.startswith(prefix) for prefix in ['GRP|', 'NAM|', 'ACC|']):
+        raise Exception('The value of --arch must start either with \'GRP|\', ' +
+                        '\'NAM|\' or \'ACC\'')
     # Read preprocessed HMMserch results.
     hmm_df = pd.read_csv(args.hmmres, sep='\t')
     print(f'Found {hmm_df.shape[0]:>3} results, ', end='')
-    # Use either group column or qacc (Pfam accession version) depending on
-    # input regex prefix. Remove the prefix from regex.
-    col = 'group' if args.arch.startswith('GRP|') else 'qacc'
+    # Use either group column, qname or qacc (Pfam accession version) depending
+    # on input regex prefix. Remove the prefix from regex.
+    if args.arch.startswith('GRP|'):
+        col = 'group'
+    elif args.arch.startswith('NAM|'):
+        col = 'qname'
+    else:
+        col = 'qacc'
     args.arch = args.arch[4:]
     # In the preprocessed data rows have been already sorted by assembly accession,
     # target protein sequecne id/name and the star position of matched domain to
@@ -70,7 +76,7 @@ def main():
     # with single dash. That creates for every target protein sequence a string
     # describing its domain architecture in regard to domain groups as well as
     # domain Pfam accession versions.
-    agg_df = hmm_df['tname group qacc'.split()].groupby('tname').agg(
+    agg_df = hmm_df['tname group qacc qname'.split()].groupby('tname').agg(
         lambda values: '-'.join(values))
     # Filter the aggregated rows in respect to either group or qacc column
     # (whichever is selected in command line arguments) using architecure

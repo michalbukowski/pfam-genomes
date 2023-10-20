@@ -97,8 +97,8 @@ def main():
     ]
     # Load to a DataFrame searched domain data, merge with HMMsearch data.
     dom_df = pd.read_csv(args.domdata, sep='\t')
-    hmm_df = hmm_df.merge(dom_df[['pfm_acc', 'group']], left_on='qacc',
-                          right_on='pfm_acc', how='left')
+    hmm_df = hmm_df.merge(dom_df[['pfm_name', 'group']], left_on='qname',
+                          right_on='pfm_name', how='left')
     # Select the requested columns (args.leave).
     hmm_df = hmm_df[args.leave.split()]
     # Sort hmm_df rows by assembly accession, target protein sequecne id/name and
