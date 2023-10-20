@@ -54,7 +54,7 @@ def main():
     # file only once. Iterate over tname, select a sequence from seqs dictionary
     # { seqid : sequence }, add cluster id to its title and save it to
     # the output file in FASTA format.
-    for asmacc, sub_df in hmm_df[['asmacc', 'tname']].groupby('asmacc'):
+    for asmacc, sub_df in hmm_df[['asmacc', 'tname', 'clustid']].groupby('asmacc'):
         seqs = read_fasta(f'{args.seqdir}/{asmacc}.faa', sub_df['tname'].to_numpy())
         sub_df.sort_values('tname', inplace=True)
         for seqid in sub_df['tname'].sort_values():
