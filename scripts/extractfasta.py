@@ -42,16 +42,26 @@ def main():
        (per each assembly accession) located in given directory and saves them
        to the output file.
     '''
-    # Load final, filtered HMMsearch results to a DataFrame.
+    # Load final, filtered HMMsearch results to a DataFrame. Drop duplicates in
+    # respect to asmacc (assembly accession) and tname (seqid) to avoid multiple
+    # extraction of the same sequence. A sequecne may appear in the search results
+    # mupltiple times when contains more than one domain that is searched for.
     args = parse_args()
     hmm_df = pd.read_csv(args.hmmres, sep='\t')
+    hmm_df.drop_duplicates('asmacc tname'.split(), inplace=True)
     fout = open(args.output, 'w')
-    # Group hmm_df by asmacc (assembly accession) to read a given input sequence
-    # data only once. iterate over tname, select seuences from seqs dictionary
-    # { seqid : sequence }, save them to the output file in FASTA format.
+    # Group hmm_df by asmacc (assembly accession) to read a given sequence input
+    # file only once. Iterate over tname, select a sequence from seqs dictionary
+    # { seqid : sequence }, add cluster id to its title and save it to
+    # the output file in FASTA format.
     for asmacc, sub_df in hmm_df[['asmacc', 'tname']].groupby('asmacc'):
         seqs = read_fasta(f'{args.seqdir}/{asmacc}.faa', sub_df['tname'].to_numpy())
+        sub_df.sort_values('tname', inplace=True)
         for seqid in sub_df['tname'].sort_values():
+            clustid = f'clustid={clustid}'
+            if seqs[seqid].title != '':
+                clustid = f' {clustid}'
+            seqs[seqid].title += clustid
             fout.write(seqs[seqid].fasta())
     fout.close()
 
