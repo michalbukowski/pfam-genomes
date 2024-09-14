@@ -83,9 +83,10 @@ def main():
     with open(args.tmpl) as f:
         tmpl  = f.read()
     
-    # Load tables assigning colors to group domains, next load preprocessed
-    # HMMsearch results.
+    # Load tables assigning colors to group domains, add to it predefined colors
+    # for domains unassigned to any group, next load preprocessed HMMsearch results.
     colors_df = pd.read_csv(args.colors, sep='\t')
+    colors_df.loc[colors_df.shape[0]] = 'Unassigned', '#dddddd', '#cccccc'
     hmm_df    = pd.read_csv(args.hmmres, sep='\t')
     
     # Fill up CSS template with domain group names (class names) and colors

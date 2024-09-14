@@ -194,50 +194,6 @@ rule preprocess:
                                    > {log} 2>&1
         '''
 
-# In the 6-Bth step, branch to generate charts in HTML that describe
-# all domain architectures, also in regard to groups of domains
-rule archchart:
-    input:
-        style   = 'templates/style.css',
-        tmpl    = 'templates/tmpl.html',
-        colors  = 'input/colors.tsv',
-        clstlen = rules.uniquetrans.output.length,
-        hmmres  = rules.preprocess.output
-    output:
-        'output/final/architectures.html'
-    log:
-        'log/archchart.log'
-    shell:
-        '''scripts/archchart.py --style   {input.style}   \
-                                --tmpl    {input.tmpl}    \
-                                --colors  {input.colors}  \
-                                --clstlen {input.clstlen} \
-                                --hmmres  {input.hmmres}  \
-                                --output  {output}        \
-                                  > {log} 2>&1
-        '''
-
-# In the 7-Bth step, continue the branch to convert charts in HTML format to PNG
-rule convertchart:
-    params:
-       quality = 100,
-       width   = 2000,
-       zoom    = 3
-    input:
-        rules.archchart.output
-    output:
-        'output/final/architectures.png'
-    log:
-        'log/convertchart.log'
-    shell:
-        '''wkhtmltoimage --disable-smart-width      \
-                         --width {params.width}     \
-                         --zoom {params.zoom}       \
-                         --quality {params.quality} \
-                           {input} {output}         \
-                           >> {log} 2>&1
-        '''
-
 # In the 6th step filter the results, leave hits of independent E-value (i-Evalue)
 # <= 0.001 and domain coverage >= 80% (0.8). Next select sequences with domain
 # architecure of interest.
@@ -339,6 +295,68 @@ rule finpreprocess:
                                  --domtbl   {input.domtbl}   \
                                  --output   {output}         \
                                    > {log} 2>&1
+        '''
+
+# In the 10B-th step, branch to merge all domain-annotated results in one file
+# in order to create general architecture charts in following steps.
+rule finmerge:
+    params:
+        mask = rules.finpreprocess.output[0].replace('{arch}', '*')
+    input:
+        expand(rules.finpreprocess.output, arch=archs.keys())
+    output:
+        'output/hmm/finmerged.tsv'
+    log:
+        'log/hmm/finmerge.log'
+    shell:
+        '''head -1 {input[0]} > {output}
+           for file in {params.mask}; do
+               tail -n +2 "${{file}}" >> {output}
+           done
+        '''
+
+# In the 11B-th step, generate charts in HTML that describe
+# all domain architectures, also in regard to groups of domains.
+rule archchart:
+    input:
+        style   = 'templates/style.css',
+        tmpl    = 'templates/tmpl.html',
+        colors  = 'input/colors.tsv',
+        clstlen = rules.uniquetrans.output.length,
+        hmmres  = rules.finmerge.output
+    output:
+        'output/final/architectures.html'
+    log:
+        'log/archchart.log'
+    shell:
+        '''scripts/archchart.py --style   {input.style}   \
+                                --tmpl    {input.tmpl}    \
+                                --colors  {input.colors}  \
+                                --clstlen {input.clstlen} \
+                                --hmmres  {input.hmmres}  \
+                                --output  {output}        \
+                                  > {log} 2>&1
+        '''
+
+# In the 12B-th step, continue the branch to convert charts in HTML format to PNG.
+rule convertchart:
+    params:
+       quality = 100,
+       width   = 2000,
+       zoom    = 3
+    input:
+        rules.archchart.output
+    output:
+        'output/final/architectures.png'
+    log:
+        'log/convertchart.log'
+    shell:
+        '''wkhtmltoimage --disable-smart-width      \
+                         --width {params.width}     \
+                         --zoom {params.zoom}       \
+                         --quality {params.quality} \
+                           {input} {output}         \
+                           >> {log} 2>&1
         '''
 
 # In the 10th step, continuing step 6th, use SignalP to detect N-terminal signal
