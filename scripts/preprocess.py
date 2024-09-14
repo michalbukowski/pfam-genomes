@@ -99,7 +99,7 @@ def main():
     dom_df = pd.read_csv(args.domdata, sep='\t')
     hmm_df = hmm_df.merge(dom_df[['pfm_name', 'group']], left_on='qname',
                           right_on='pfm_name', how='left')
-    hmm_df['group'].fillna('Unassigned', inplace=True)
+    hmm_df['group'].fillna('OTHER', inplace=True)
     # Select the requested columns (args.leave).
     hmm_df = hmm_df[args.leave.split()]
     # Sort hmm_df rows by assembly accession, target protein sequecne id/name and
