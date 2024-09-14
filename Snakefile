@@ -60,7 +60,6 @@ rule all:
     input:
         expand('output/final/final_{arch}.faa',  arch=archs.keys()),
         expand('output/final/final_{arch}.gff3', arch=archs.keys()),
-        expand('output/hmm/finpreprocessed_{arch}.tsv', arch=archs.keys()),
         'output/final/architectures.png'
 
 # In the 1st step extract from each genome all posisble open reading frames (ORFs)
