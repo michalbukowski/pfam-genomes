@@ -277,7 +277,8 @@ rule extracttrans:
                                      > {log} 2>&1
         '''
 
-
+# In the 8th step, search for all known domains from the complete Pfam-A HMM file
+# in the extracted selected sequences.
 rule finhmmsearch:
     params:
         E       = 0.01,
@@ -311,7 +312,8 @@ rule finhmmsearch:
                                  {input}
         '''
 
-
+# In the 9th step, preprocess the raw HMMsearch results and save relevant
+# columns (leave) in the final TSV file.
 rule finpreprocess:
     params:
         qcovt   = 0.8,
@@ -340,8 +342,7 @@ rule finpreprocess:
                                    > {log} 2>&1
         '''
 
-
-# In the 8th step, continuing step 6th, use SignalP to detect N-terminal signal
+# In the 10th step, continuing step 6th, use SignalP to detect N-terminal signal
 # sequences in the final set of protein sequences for each domain architecture
 # of interest. This step requires a separate SignalP installation and an access
 # to it via signalp command. If the command is not found, empty output file
@@ -377,7 +378,7 @@ rule signalp:
            done
         '''
 
-# In the last, 9th step prepare GFF3 file with annotations for the final protein
+# In the last, 11th step prepare GFF3 file with annotations for the final protein
 # sequence set. Annotations are prepared based on HMMsearch filtered results and
 # SignalP results.
 rule annotdom:
