@@ -32,8 +32,8 @@ def parse_args():
        --cols    : names for columns reported by hmmsearch
        --leave   : names of columns that are to be preserved
        --domdata : a TSV file with data describing searched domains, it must
-                    link Pfam accession versions (pfam_acc column) with names of
-                    groups those are assigned to (group column)
+                   link Pfam accession versions (pfam_acc column) with names of
+                   groups those are assigned to (group column)
        --domtbl  : per domain (domtblout) hmmsearch tabular output data file
        --output  : final TSV output file with filtered data
        Returns:
@@ -99,6 +99,7 @@ def main():
     dom_df = pd.read_csv(args.domdata, sep='\t')
     hmm_df = hmm_df.merge(dom_df[['pfm_name', 'group']], left_on='qname',
                           right_on='pfm_name', how='left')
+    hmm_df['group'].fillna('Unassigned', inplace=True)
     # Select the requested columns (args.leave).
     hmm_df = hmm_df[args.leave.split()]
     # Sort hmm_df rows by assembly accession, target protein sequecne id/name and

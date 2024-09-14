@@ -1,0 +1,6 @@
+genomes
+output
+log
+input/Pfam-A.hmm
+scripts/lib/__pycache__
+.snakemake

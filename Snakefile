@@ -60,6 +60,7 @@ rule all:
     input:
         expand('output/final/final_{arch}.faa',  arch=archs.keys()),
         expand('output/final/final_{arch}.gff3', arch=archs.keys()),
+        expand('output/hmm/finpreprocessed_{arch}.tsv', arch=archs.keys()),
         'output/final/architectures.png'
 
 # In the 1st step extract from each genome all posisble open reading frames (ORFs)
@@ -276,6 +277,70 @@ rule extracttrans:
                                      > {log} 2>&1
         '''
 
+
+rule finhmmsearch:
+    params:
+        E       = 0.01,
+        domE    = 0.01,
+        incE    = 0.001,
+        incdomE = 0.001
+    threads:
+        max_cores
+    input:
+        rules.extracttrans.output
+    output:
+        'output/hmm/finhmmsearch_{arch}.txt'
+    log:
+        'log/hmm/finhmmsearch_{arch}.log'
+    shell:
+        '''if [[ ! -s {input} ]]; then
+               touch {output}
+               exit 0
+           fi
+           hmmsearch --cpu       {threads}        \
+                      -E         {params.E}       \
+                     --domE      {params.domE}    \
+                     --incE      {params.incE}    \
+                     --incdomE   {params.incdomE} \
+                     --noali                      \
+                     --notextw                    \
+                     --acc                        \
+                      -o         /dev/null        \
+                     --domtblout {output}         \
+                                 {pfam_db}        \
+                                 {input}
+        '''
+
+
+rule finpreprocess:
+    params:
+        qcovt   = 0.8,
+        iEvalue = 0.001,
+        cols    = 'tname tacc tlen qname qacc qlen E-value seqscore seqbias '+ \
+                  '# of c-Evalue i-Evalue domscore dombias hmm_from hmm_to ' + \
+                  'ali_from ali_to env_from env_to acc desc',
+        leave   = 'tname srcid start end asmacc clustid qname qacc qlen qcovt ' + \
+                  'group E-value c-Evalue i-Evalue hmm_from hmm_to '            + \
+                  'env_from env_to'
+    input:
+        domdata = rules.hmmfetch.input,
+        domtbl  = rules.finhmmsearch.output
+    output:
+        'output/hmm/finpreprocessed_{arch}.tsv'
+    log:
+        'log/hmm/finpreprocess_{arch}.log'
+    shell:
+        '''scripts/preprocess.py --qcovt    {params.qcovt}   \
+                                 --iEvalue  {params.iEvalue} \
+                                 --cols    "{params.cols}"   \
+                                 --leave   "{params.leave}"  \
+                                 --domdata  {input.domdata}  \
+                                 --domtbl   {input.domtbl}   \
+                                 --output   {output}         \
+                                   > {log} 2>&1
+        '''
+
+
 # In the 8th step, continuing step 6th, use SignalP to detect N-terminal signal
 # sequences in the final set of protein sequences for each domain architecture
 # of interest. This step requires a separate SignalP installation and an access
@@ -318,7 +383,7 @@ rule signalp:
 rule annotdom:
     input:
         sigres = rules.signalp.output,
-        hmmres = rules.filter.output,
+        hmmres = rules.finpreprocess.output, #rules.filter.output,
         seqs   = rules.extracttrans.output
     output:
         rules.extracttrans.output[0][:rules.extracttrans.output[0].rfind('.')] + '.gff3'
