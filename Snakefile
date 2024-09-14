@@ -379,12 +379,12 @@ rule signalp:
         '''
 
 # In the last, 11th step prepare GFF3 file with annotations for the final protein
-# sequence set. Annotations are prepared based on HMMsearch filtered results and
-# SignalP results.
+# sequence set. Annotations are prepared based on HMMsearch filtered results
+# obtained for a search for all domains as well as SignalP results.
 rule annotdom:
     input:
         sigres = rules.signalp.output,
-        hmmres = rules.finpreprocess.output, #rules.filter.output,
+        hmmres = rules.finpreprocess.output,
         seqs   = rules.extracttrans.output
     output:
         rules.extracttrans.output[0][:rules.extracttrans.output[0].rfind('.')] + '.gff3'
