@@ -8,9 +8,35 @@ CAT	IPR000667	PF02113	Peptidase_S13	Peptidase S13
 CAT	IPR005490	PF03734	YkuD	L,D-transpeptidase catalytic domain
 CAT	IPR007921	PF05257	CHAP	CHAP domain
 CAT	IPR000064	PF00877	NLPC_P60	Endopeptidase, NLPC/P60 domain
+CAT	IPR000209	PF00082	Peptidase_S8	Subtilase family
 CAT	IPR040449	PF02016	Peptidase_S66	Peptidase family S66
+CAT	IPR040921	PF17676	Peptidase_S66C	LD-carboxypeptidase C-terminal domain
+CAT	IPR002502	PF01510	Amidase_2	N-acetylmuramoyl-L-alanine amidase
+CAT	IPR002508	PF01520	Amidase_3	N-acetylmuramoyl-L-alanine amidase
+CAT	IPR008044	PF05382	Amidase_5	Bacteriophage peptidoglycan hydrolase
+CAT	IPR024301	PF12671	Amidase_6	Putative amidase domain
+CAT	IPR024408	PF11860	Muramidase	N-acetylmuramidase
+CAT	IPR054338	PF22115	T6SS_Tse3_cat	T6SS, Peptidoglycan muramidase Tse3, catalytic domain
+CAT	---------	PF24568	CC_PcsB	Peptidoglycan hydrolase PcsB, coiled-coil domain
+CAT	IPR045834	PF19425	Csd3_N2	Csd3 second domain
+CAT	IPR015020	PF08924	Rv2525c_GlyHyd-like	Rv2525c-like, glycoside hydrolase-like domain
+CAT	IPR002053	PF01183	Glyco_hydro_25	Glycosyl hydrolases family 25
+CAT	IPR004843	PF00149	Metallophos	Calcineurin-like phosphoesterase
 CWT	IPR002477	PF01471	PG_binding_1	Putative peptidoglycan binding domain
 CWT	IPR021731	PF11741	AMIN	AMIN domain
 CWT	IPR001119	PF00395	SLH	S-layer homology (SLH) domain profile
+CWT	IPR010466	PF06347	SH3_4	Bacterial SH3 domain
+CWT	IPR003646	PF08239	SH3_3	Bacterial SH3 domain
 CWT	IPR003646	PF08460	SH3_5	SH3-like domain, bacterial-type
+CWT	IPR039439	PF12913	SH3_6	SH3 domain (SH3b1 type)
+CWT	IPR026864	PF12914	SH3_7	SH3 domain of SH3b2 type
+CWT	IPR041382	PF18348	SH3_16	Bacterial dipeptidyl-peptidase Sh3 domain
+CWT	---------	PF23795	SH3_YKFC_2nd	YKFC SH3b2 domain
+CWT	---------	PF24246	SH3b_T	SH3b_T domain
+CWT	IPR025987	PF13457	GW	GW (Gly-Tryp) dipeptide domain
+CWT	IPR007730	PF05036	SPOR	SPOR domain
 CWT	IPR018392	PF01476	LysM	LysM domain profile
+CWT	---------	PF23472	LysM2_CERK1_LYK3_4_5	LYK3/4/5 LysM2 domain
+CWT	---------	PF23473	LysM3_LYK4_5	LYK4/5 LysM3 domain
+CWT	IPR007340	PF04225	LysM_OapA	Opacity-associated protein A LysM-like domain
+CWT	IPR013731	PF08525	OapA_N	Opacity-associated protein A N-terminal motif

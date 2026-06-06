@@ -1,5 +1,6 @@
-#!/usr/bin/env python3
-# Created by Michal Bukowski (michal.bukowski@tuta.io) under GPL-3.0 license
+#!/usr/bin/env python
+# Created by Michal Bukowski (michal.bukowski@tuta.io, m.bukowski@uj.edu.pl)
+# under GPL-3.0 license
 
 # Based on final, filtered HMMsearch results extracts relevant sequences from
 # files with ORF protein sequences (per each assembly accession) located in given

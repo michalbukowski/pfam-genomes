@@ -1,0 +1,8 @@
+name: pyhmmer
+channels:
+  - conda-forge
+  - bioconda
+dependencies:
+  - conda-forge::pandas=3.0.*
+  - bioconda::pyhmmer=0.12.*
+

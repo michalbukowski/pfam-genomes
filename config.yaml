@@ -1,13 +1,14 @@
-# Created by Michal Bukowski (michal.bukowski@tuta.io) under GPL-3.0 license
+# Created by Michal Bukowski (michal.bukowski@tuta.io, m.bukowski@uj.edu.pl)
+# under GPL-3.0 license
 
 # Locations of Pfam database (Pfam-A.hmm file) and directory with genomic sequences.
-pfam_db: input/Pfam-A.hmm
+pfam_db: input/Pfam-A.hmm.gz
 gen_dir: genomes
 
 # Dictionary describing domain architectures to search for as pairs of
 # architecture custom label : regex describing the architecure with a prefix
-# (GRP| or ACC|) that indicates whether domain group labels or Pfam accession
-# version number are used. Domains are assigned to groups in input/domain.tsv file.
+# (GRP|, NAM| or ACC|) that indicates whether domain group labels, Pfam domain names
+# or accession numbers. Domains are assigned to groups in input/domain.tsv file.
 # In regex strings do not use characters that may confuse Bash (e.g. &;`'"),
 # only letters, numbers, dash and underscore symbols are advised.
 # Example architectures:
@@ -24,8 +25,7 @@ gen_dir: genomes
 #                               exactly two domains referenced by Pfam accession
 #                               version numbers PF01551.25 and PF08460.13
 archs:
-    CAT-CWT   : GRP|CAT-CWT
-    xCWTxCATx : GRP|.*CWT.*CAT.*
-    M23-SH3   : NAM|Peptidase_M23-SH3_5
-    M23-SLH   : NAM|Peptidase_M23-SLH
+    SP-M23-SH35   : NAM|SP-(.+-)*Peptidase_M23-SH3_5
+    SP-SH33-Amid3 : NAM|SP-SH3_3-Amidase_3
+    SP-Amid2-LysM : NAM|SP-Amidase_2-LysM
 

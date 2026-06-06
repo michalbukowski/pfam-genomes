@@ -1,14 +1,15 @@
-#!/usr/bin/env python3
-# Created by Michal Bukowski (michal.bukowski@tuta.io) under GPL-3.0 license
+#!/usr/bin/env python
+# Created by Michal Bukowski (michal.bukowski@tuta.io, m.bukowski@uj.edu.pl)
+# under GPL-3.0 license
 
 # Performs fast dictionary-based clustering of sequences in order to obtain
 # a non-redundant set. Writes clustering information to an extra TSV file
 # by changing the suffix of the FASTA output file name to '_clusts.tsv', and
-# for cluster item counts to '_lenghts.tsv'. Arguments:
+# for cluster item counts to '_lengths.tsv'. Arguments:
 # --input  : protein FASTA file with sequences to be clustered
 # --output : protein FASTA file with representative sequences
 # USAGE:
-# ./uniqueseqs.py [--input INPUT_FASTA] --output OUTPUT_FASTA
+# ./unique.py [--input INPUT_FASTA] --output OUTPUT_FASTA
 
 #-------------------------------------------------------------------------------
 import argparse, sys
@@ -16,6 +17,7 @@ from os import linesep as eol
 from os.path import sep, extsep
 from glob import glob
 from itertools import count
+from hashlib import blake2b
 from lib.fasta import fasta, fasta_meta
 
 #-------------------------------------------------------------------------------
@@ -48,7 +50,7 @@ def main():
        of sequences in order to obtain a non-redundant set. Writes clustering
        information to an extra TSV file by changing the suffix of the FASTA
        output file name to '_clusts.tsv', and for cluster item counts to
-       '_lenghts.tsv'
+       '_lengths.tsv'
     '''
     # Parse command line arguments and create a dictionary for representative
     # sequecnes {cluster id : length}
@@ -73,7 +75,7 @@ def main():
     # A helper function for the next block.
     def process_seq():
         seqid  = header.split(' ')[0]
-        seqkey = hash(seq[1:])
+        seqkey = blake2b(seq[1:].encode(), digest_size=16).hexdigest()
         if seqkey not in clusts:
             clusts[seqkey] = 1
             frepr.write(fasta(header, f'clustid={seqkey}', seq))

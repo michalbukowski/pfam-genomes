@@ -1,15 +1,16 @@
-#!/usr/bin/env python3
-# Created by Michal Bukowski (michal.bukowski@tuta.io) under GPL-3.0 license
+#!/usr/bin/env python
+# Created by Michal Bukowski (michal.bukowski@tuta.io, m.bukowski@uj.edu.pl)
+# under GPL-3.0 license
 
-# Creates a GFF3 file with annotations based on final filtered HMMsearch and
-# SignalP results. Arguments:
-# --sigres  : final SignalP results for Gram+ and Gram- bacteria
-# --hmmres  : final filtered HMMsearch results
-# --seqs    : final FASTA file with relevant sequences
-# --output  : GFF3 file with annotations for relevant sequences
+# Creates a GFF3 file with annotations for the final set of protein sequences
+# based on integrated HMMsearch and SignalP results. For each sequence, generates
+# GFF3 feature records describing the positions and identities of domain and
+# signal peptide hits. Arguments:
+# --allres  : integrated HMMsearch and SignalP results TSV
+# --seqs    : FASTA file with the final protein sequences to annotate
+# --output  : output GFF3 file with domain and signal peptide annotations
 # USAGE:
-# ./annot.py --sigres SIGNALP_RES --hmmres HMMSEARCH_RES \
-#            --seqs ANALYSED_SEQS --output GFF3_ANNOTS
+# ./annot.py --allres INTEGRATED_RES --seqs ANALYSED_SEQS --output GFF3_ANNOTS
 
 #-------------------------------------------------------------------------------
 import argparse
@@ -17,22 +18,21 @@ import pandas as pd
 from os import linesep as eol
 from lib.fasta import read_fasta
 
+GFF3_HEAD = f'##gff-version 3{eol}'
+
 #-------------------------------------------------------------------------------
 def parse_args():
     '''Parses command line arguments:
-       --sigres  : final SignalP results for Gram+ and Gram- bacteria
-       --hmmres  : final filtered HMMsearch results
-       --seqs    : final FASTA file with relevant sequences
-       --output  : GFF3 file with annotations for relevant sequences
+       --allres  : integrated HMMsearch and SignalP results TSV
+       --seqs    : FASTA file with the final protein sequences to annotate
+       --output  : output GFF3 file with domain and signal peptide annotations
        Returns:
        args : ArgumentParser object
     '''
     parser = argparse.ArgumentParser()
     
-    parser.add_argument('--sigres', type=str, required=True,
-        help='Final SignalP results for Gram+ and Gram- bacteria')
-    parser.add_argument('--hmmres', type=str, required=True,
-        help='Final HMMsearch results')
+    parser.add_argument('--allres', type=str, required=True,
+        help='Final integrated HMMsearch and SignalP results')
     parser.add_argument('--seqs', type=str, required=True,
         help='FASTA file with analysed sequences')
     parser.add_argument('--output', type=str, required=True,
@@ -42,48 +42,27 @@ def parse_args():
     return args
 
 def main():
-    '''The entry point function that creates a GFF3 file with annotations based
-       on final filtered HMMsearch and SignalP results.
+    '''Loads integrated HMMsearch and SignalP results, filters to sequences
+       present in the input FASTA, and writes a GFF3 file with one feature
+       record per domain or signal peptide hit, sorted by position.
     '''
     # Parse command line arguments, load analysed sequences from FASTA file.
     args = parse_args()
     seqs = read_fasta(args.seqs)
     
     # Load HMMsearch results
-    hmm_df = pd.read_csv(args.hmmres, sep='\t')
-    hmm_df = hmm_df[ hmm_df['tname'].isin(seqs) ]
+    all_df = pd.read_csv(args.allres, sep='\t')
+    all_df = all_df[ all_df['tname'].isin(seqs) ]
     
-    # Open SingalP results and parse them into a DataFrame. Drop duplicates in
-    # regard to analysed sequence id (ID), leve those with highest propabilities
-    # of possesing an N-terminal.
-    with open(args.sigres) as f:
-        f.readline()
-        names = f.readline()[2:-1].split('\t')
-    sig_df = pd.read_csv(args.sigres, names=names, comment='#', sep='\t')
-    sig_df.dropna(inplace=True)
-    if sig_df.shape[0] > 0:
-        cols = sig_df['CS Position'].str.split('(?:\-)|(?:\ )', expand=True)
-        sig_df['pos'] = cols[2].astype(int)
-        sig_df['prob'] = cols[7].astype(float)
-        sig_df.sort_values(['ID', 'prob'], ascending=False, inplace=True)
-        sig_df.drop_duplicates('ID', inplace=True)
-        sig_df.set_index('ID', drop=True, inplace=True)
+    # Sort the final DataFrame with respect to domains locations (order domains).
+    all_df.sort_values('tname env_from env_to'.split(), inplace=True)
     
     # Process SignalP hits that are and filtered HMM search hits to generate
     # a GFF3 file desribing positions and kids of relevant domains in
     # the analysed sequenes.
     fout = open(args.output, 'w')
-    fout.write(f'##gff-version 3{eol}')
-    for tname, sub_df in hmm_df.groupby('tname'):
-        fout.write(f'##sequence-region {tname} 1 {len(seqs[tname])}{eol}')
-        if tname in sig_df.index:
-            srcid = sub_df['srcid'].iloc[0]
-            pos   = sig_df.loc[tname, 'pos']
-            prob  = (sig_df.loc[tname, 'prob']*100).round(0).astype(int)
-            name  = f'Name=SP ({prob:d}%)'
-            line  = tname, srcid, 'SP', '1', str(pos), '.', '+', \
-                    '.', name
-            fout.write('\t'.join(line) + eol)
+    fout.write(GFF3_HEAD)
+    for tname, sub_df in all_df.groupby('tname'):
         for _, (qname, qacc, group, srcid, env_from, env_to) in \
             sub_df['qname qacc group srcid env_from env_to'.split()].iterrows():
             name = f'Name={group} ({qname} [{qacc}])'

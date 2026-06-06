@@ -1,4 +1,6 @@
-// Created by Michal Bukowski (michal.bukowski@tuta.io) under GPL-3.0 license
+/* Created by Michal Bukowski (michal.bukowski@tuta.io, m.bukowski@uj.edu.pl)
+   under GPL-3.0 license
+*/
 
 /* Searches for all possible open reading frames (ORFs) in input FASTA format
    data in the context of given alphabet and translation table. Saves ORFs and
@@ -6,24 +8,26 @@
    messages to stderr.
    Required and [ optional ] command line arguments:
    --alph      : a path to a text file with sequence alphabet (first line - all
-                 possible characters, second - complementary chracters)
+                 possible characters, second - complementary characters)
    --tab       : a path to a text file with a translation table in a short format
                  as on https://www.ncbi.nlm.nih.gov/Taxonomy/Utils/wprintgc.cgi
-   --asmacc    : assembly accession version to be saved as metadata in sequence
-                 headers
+   --asmacc    : assembly accession version or another kind of input sequences ID
+                 to be saved as metadata in sequence headers
    --minlen    : minimal ORF's length in nucleotides
-   [ --in ]    : optional, input FASTA file (uncompressed), if not given, data is
-                 read from stdin
-   [ --seqs ]  : optional, output FASTA file with ORF's sequeces, if not given,
+   [ --seqin ] : optional, input FASTA file, if not given, data is read from stdin
+   [ --index ] : optional, fixed-width-line text index for the output FASTA protein
+                 file
+   [ --seqs ]  : optional, output FASTA file with ORF sequences, if not given,
                  data is written to stdout
-   [ --trans ] : optional, output FASTA file with ORF's translations, if not given,
-                  data is written to stdout
+   [ --trans ] : optional, output FASTA file with ORF translations, if not given,
+                 data is written to stdout
    USAGE:
    ./extractorfs --alph ALPHABET --tab TRANS_TAB --asmacc ASM_ACC --minlen MIN_LEN \
-                 [ --in INPUT_FASTA --seqs ORF_FASTA --trans TRNAS_FASTA ]
+                 [ --seqin INPUT_FASTA --seqs ORF_FASTA --trans TRANS_FASTA ]
 */
 #include <cstdio>
 #include <iostream>
+#include <iomanip>
 #include <fstream>
 #include <sstream>
 #include <string_view>
@@ -42,7 +46,8 @@ const char USAGE[] = "USAGE: extractorfs "
                      "--tab TRANS_TAB_FILE "
                      "--asmacc ASSEMBLY_ACCESSION "
                      "--minlen ORF_MINLEN "
-                     "[--in INPUT_FNA_FILE] "
+                     "[--seqin INPUT_FNA_FILE] "
+                     "[--index OUTPUT_INDEX_FILE] "
                      "[--seqs OUTPUT_FNA_FILE] "
                      "[--trans OUTPUT_FAA_FILE]";
 
@@ -70,9 +75,9 @@ Alphabet::~Alphabet() {
     delete this->mapping;
 }
 
-/* Reads an alphabet form a text file. Arguments:
+/* Reads an alphabet from a text file. Arguments:
    string fpath : a path to a text file with the alphabet
-   Resturns:
+   Returns:
    alph : Alphabet* object pointer
 */
 Alphabet* Alphabet::fromFile(string fpath) {
@@ -159,7 +164,7 @@ CodonTable* CodonTable::fromFile(string fpath) {
     inFile.close();
     
     /* The expected number of lines is 5 (first, second and third letter of a codon,
-       whether the codon is a start or stop codon, encoded amio acid residue).
+       whether the codon is a start or stop codon, encoded amino acid residue).
     */
     if(lines.size() != 5) return NULL;
     
@@ -181,7 +186,7 @@ CodonTable* CodonTable::fromFile(string fpath) {
 }
 
 //------------------------------------------------------------------------------
-/* Seq top-level class used for storing and manipulating biological sequecnes.
+/* Seq top-level class used for storing and manipulating biological sequences.
 */
 class Seq {
     public:
@@ -190,7 +195,8 @@ class Seq {
         Seq(string, string, string, string, size_t, size_t);
         string fasta(bool, size_t);
         static bool cmpSeqs(Seq*, Seq*);
-        static vector<Seq*>* fromFile(string);
+        template<typename T>
+        static vector<T*>* fromFile(string fpath_in);
 };
 
 /* Initialises a Seq object. Arguments:
@@ -211,8 +217,8 @@ Seq::Seq(string seqid, string title="", string seq="", string srcid="", size_t s
     this->end   = end;
 }
 
-/* Returns a stored sequecne data in FASTA format, by default save metadata in
-   in header and set line width to 60 letters. Arguments:
+/* Returns stored sequence data in FASTA format, by default saves metadata in
+   the header and sets line width to 60 letters. Arguments:
    bool meta : whether to write sequence meta data to FASTA header, default true
    size_t lw : line length in characters
    Returns:
@@ -227,15 +233,15 @@ string Seq::fasta(bool meta=true, size_t lw=60) {
         if(this->start != 0)  fasta << " start=" << this->start;
         if(this->end   != 0)  fasta << " end="   << this->end;
     }
-    fasta << endl;
+    fasta << '\n';
     for(size_t i=0; i<this->seq.length(); i+=lw) {
-        fasta << this->seq.substr(i, lw) << endl;
+        fasta << this->seq.substr(i, lw) << '\n';
     }
     return fasta.str();
 }
 
 /* Compares two Seq objects for sorting purposes in respect to their location
-   (start, end) in a source sequecne. Arguments:
+   (start, end) in a source sequence. Arguments:
    Seq* one   : a sequence to compare
    Seq* other : annother sequence to compare
    Returns:
@@ -249,19 +255,20 @@ bool Seq::cmpSeqs(Seq* one, Seq* other){
         if(seq->start <= seq->end) coords[i] = seq->start;
         else coords[i] = seq->end;
     }
-    bool lower = coords[0] <= coords[1];
+    bool lower = coords[0] < coords[1];
     return lower;
 }
 
-/* Loads sequcens from a FASTA file and return them in a vector. If the file path
-   is not provided, read sequences form stdin. Arguments:
+/* Loads sequences from a FASTA file and returns them in a vector. If the file
+   path is not provided, reads sequences from stdin. Arguments:
    string fpath : a path to a FASTA file with sequences
    Returns:
    vector<Seq*>* seqs : vector<Seq*>* object pointer
 */
-vector<Seq*>* Seq::fromFile(string fpath_in) {
-    vector<Seq*>* seqs = new vector<Seq*>();
-    Seq* cur_seq = NULL;
+template<typename T>
+vector<T*>* Seq::fromFile(string fpath_in) {
+    vector<T*>* seqs = new vector<T*>();
+    T* cur_seq = NULL;
     string line;
     
     istream* stream = &cin;
@@ -283,7 +290,7 @@ vector<Seq*>* Seq::fromFile(string fpath_in) {
                 seqid = line.substr(1, pos-1);
                 title = line.substr(pos+1);
             }
-            cur_seq = new Seq(seqid, title);
+            cur_seq = new T(seqid, title);
             seqs->push_back(cur_seq);
         } else {
             cur_seq->seq += line;
@@ -295,7 +302,7 @@ vector<Seq*>* Seq::fromFile(string fpath_in) {
 }
 
 //------------------------------------------------------------------------------
-/* ProtSeq class derived form Seq used for storing and manipulating protein
+/* ProtSeq class derived from Seq used for storing and manipulating protein
    sequences.
 */
 class ProtSeq: public Seq {
@@ -303,7 +310,7 @@ class ProtSeq: public Seq {
         using Seq::Seq;
 };
 //------------------------------------------------------------------------------
-/* DNASeq class derived form Seq used for storing and manipulating nucleotide
+/* DNASeq class derived from Seq used for storing and manipulating nucleotide
    sequences.
 */
 class DNASeq: public Seq {
@@ -326,7 +333,7 @@ char DNASeq::cmpl(Alphabet* alph, char letter) {
     char cmpl_letter;
     if(alph->mapping->find(letter) != alph->mapping->end()) {
         cmpl_letter = (*alph->mapping)[letter];
-    } else letter = 'X';
+    } else cmpl_letter = 'X';
     return cmpl_letter;
 }
 /* Returns a reverse and complementary sequence. Arguments:
@@ -347,7 +354,7 @@ DNASeq* DNASeq::revCmpl(Alphabet* alph) {
 /* Translates a DNA sequence into amino acid one. Arguments:
    CodonTable* tab : codon table to be used for translation
    short start     : open reading frame shift (e.g. 0, 1 or 3), default 0
-   bool tostop     : stop translation when stop codon is encountered, dafault true
+   bool tostop     : stop translation when stop codon is encountered, default true
    Returns:
    ProtSeq* seq : ProtSeq* object pointer
 */
@@ -408,7 +415,7 @@ vector<DNASeq*>* DNASeq::findORFs(size_t minlen, Alphabet* alph, CodonTable* tab
                         size_t orflen = end - start;
                         /* Check whether the ORF meets the length requirement.
                            If it does, generate a new sequence id from
-                           the sequecne id and a subsequent number, convert start
+                           the sequence id and a subsequent number, convert start
                            and stop coordinates to GenBank format, and finally
                            create a new DNASeq object and push a pointer to it
                            to the final vector.
@@ -416,7 +423,7 @@ vector<DNASeq*>* DNASeq::findORFs(size_t minlen, Alphabet* alph, CodonTable* tab
                         if(orflen >= minlen) {
                             string orfseq = (string)seq.substr(start, orflen);
                             char seqid[100];
-                            sprintf(seqid, "%s_%06d", seqobj->seqid.c_str(), count);
+                            sprintf(seqid, "%s_%06ld", seqobj->seqid.c_str(), count);
                             start ++;
                             if(strand == -1) {
                                 start = seqobj->seq.length() - start + 1;
@@ -441,7 +448,7 @@ vector<DNASeq*>* DNASeq::findORFs(size_t minlen, Alphabet* alph, CodonTable* tab
     return orfs;
 }
 //------------------------------------------------------------------------------
-/* A helper class for stroing command line arguments.
+/* A helper class for storing command line arguments.
 */
 class Args {
     public:
@@ -451,7 +458,8 @@ class Args {
         string asmacc;
         string minlen;
         // optional
-        string in;
+        string seqin;
+        string index;
         string seqs;
         string trans;
         static Args* parseArgs(int, char**);
@@ -474,7 +482,8 @@ Args* Args::parseArgs(int argc, char** argv) {
             else if(arg == "--tab")    cur_arg = &args->tab;
             else if(arg == "--asmacc") cur_arg = &args->asmacc;
             else if(arg == "--minlen") cur_arg = &args->minlen;
-            else if(arg == "--in")     cur_arg = &args->in;
+            else if(arg == "--seqin")  cur_arg = &args->seqin;
+            else if(arg == "--index")  cur_arg = &args->index;
             else if(arg == "--seqs")   cur_arg = &args->seqs;
             else if(arg == "--trans")  cur_arg = &args->trans;
         } else if(cur_arg != NULL) {
@@ -483,11 +492,10 @@ Args* Args::parseArgs(int argc, char** argv) {
         }
     }
     
-    for(string* ptr=&args->alph; ptr <= &args->minlen; ptr++) {
-        if(*ptr == "") {
-            args = NULL;
-            break;
-        }
+    if(args->alph.empty() || args->tab.empty() ||
+       args->asmacc.empty() || args->minlen.empty()) {
+        delete args;
+        args = NULL;
     }
     
     return args;
@@ -512,7 +520,7 @@ int main(int argc, char *argv[]) {
     */
     Alphabet* alph = Alphabet::fromFile(args->alph);
     CodonTable*  tab  = CodonTable::fromFile(args->tab);
-    vector<DNASeq*>* seqs = (vector<DNASeq*>*)Seq::fromFile(args->in);
+    vector<DNASeq*>* seqs = Seq::fromFile<DNASeq>(args->seqin);
     
     /* Create and empty vector for ORFs (DNASeq* object pointers). Iterate over
        sequences and search for ORFs in each.
@@ -532,11 +540,17 @@ int main(int argc, char *argv[]) {
         orfs.insert(orfs.end(), orfs_batch->begin(), orfs_batch->end());
         delete orfs_batch;
     }
-    cerr << "Find total " << orfs.size() << " orfs" << endl;
+    cerr << "Found total " << orfs.size() << " orfs" << endl;
     
-    /* Print in FASTA format ORF sequences and their translations to stdout
+    /* Print in FASTA format ORF sequences, their index and translations to stdout
        or save to files.
     */
+    ostream* indexstream = &cout;
+    ofstream outFileIndex;
+    if(args->index != "") {
+        outFileIndex.open(args->index);
+        indexstream = &outFileIndex;
+    }
     ostream* seqstream = &cout;
     ofstream outFileSeqs;
     if(args->seqs != "") {
@@ -549,18 +563,41 @@ int main(int argc, char *argv[]) {
         outFileTrans.open(args->trans);
         transtream = &outFileTrans;
     }
+    
     for(ptr=orfs.begin(); ptr!=orfs.end(); ptr++) {
         DNASeq* seq = *ptr;
         seq->title = "asmacc=" + args->asmacc + seq->title;
-        *seqstream  << seq->fasta()             << endl;
-        *transtream << seq->trans(tab)->fasta() << endl;
+        
+        *seqstream  << seq->fasta();
+        
+        std::streamoff start = transtream->tellp();
+        ProtSeq* protseq = seq->trans(tab);
+        *transtream << protseq->fasta();
+        std::streamoff end = transtream->tellp();
+        
+        *indexstream << setw(20) << args->asmacc
+                     << setw(30) << seq->seqid
+                     << setw(7)  << seq->start
+                     << setw(7)  << seq->end
+                     << setw(8)  << start
+                     << setw(5)  << end - start
+                     << '\n';
+        
+        delete protseq;
     }
+    if(args->index != "") outFileIndex.close();
     if(args->seqs != "") outFileSeqs.close();
     if(args->trans != "") outFileTrans.close();
     
     /* Clean up.
     */
-    delete args, alph, tab, seqs;
+    for(DNASeq* seq : *seqs) delete seq;
+    delete seqs;
+    for(DNASeq* orf : orfs) delete orf;
+    delete args;
+    delete alph;
+    delete tab;
+    
     cerr << "Done" << endl;
 }
 
